@@ -435,11 +435,125 @@
                     </template>
                 </div>
             </div>
+
+            <!-- Settings View -->
+            <div x-show="currentView === 'settings'" class="pb-6">
+                <div class="bg-white rounded-3xl shadow-xl shadow-blue-500/20 p-6 mb-6">
+                    <h1 class="text-2xl font-bold text-gray-900">Settings</h1>
+                </div>
+
+                <!-- Data Management -->
+                <div class="bg-white rounded-3xl shadow-xl shadow-blue-500/20 p-6 mb-6">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4">Data Management</h2>
+
+                    <!-- Export Data -->
+                    <div class="mb-4">
+                        <button @click="exportAllData()"
+                                class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl p-4 shadow-lg shadow-green-500/30 hover:shadow-xl card-hover btn-press">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="text-left">
+                                        <p class="font-bold text-lg">Export All Data</p>
+                                        <p class="text-sm text-white/80">Download as CSV file</p>
+                                    </div>
+                                </div>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </div>
+                        </button>
+                    </div>
+
+                    <!-- Import Data -->
+                    <div class="mb-4">
+                        <input type="file" id="importFile" accept=".csv" @change="importFromCSV($event)" class="hidden">
+                        <button @click="document.getElementById('importFile').click()"
+                                class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl p-4 shadow-lg shadow-blue-500/30 hover:shadow-xl card-hover btn-press">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                        </svg>
+                                    </div>
+                                    <div class="text-left">
+                                        <p class="font-bold text-lg">Import Data</p>
+                                        <p class="text-sm text-white/80">Upload CSV file to restore</p>
+                                    </div>
+                                </div>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </div>
+                        </button>
+                    </div>
+
+                    <!-- Clear All Data -->
+                    <div class="mb-4">
+                        <button @click="clearAllData()"
+                                class="w-full bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-2xl p-4 shadow-lg shadow-red-500/30 hover:shadow-xl card-hover btn-press">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </div>
+                                    <div class="text-left">
+                                        <p class="font-bold text-lg">Clear All Data</p>
+                                        <p class="text-sm text-white/80">Delete all people & transactions</p>
+                                    </div>
+                                </div>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- App Info -->
+                <div class="bg-white rounded-3xl shadow-xl shadow-blue-500/20 p-6 mb-6">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4">App Information</h2>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                            <span class="text-gray-600">Version</span>
+                            <span class="font-semibold text-gray-900">1.0.0</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                            <span class="text-gray-600">Total People</span>
+                            <span class="font-semibold text-gray-900" x-text="people.length"></span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                            <span class="text-gray-600">Total Transactions</span>
+                            <span class="font-semibold text-gray-900" x-text="transactions.length"></span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                            <span class="text-gray-600">Storage</span>
+                            <span class="font-semibold text-gray-900">IndexedDB (Offline)</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-gray-600">Status</span>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
+                                  :class="isOnline ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'">
+                                <span class="w-2 h-2 rounded-full mr-2"
+                                      :class="isOnline ? 'bg-green-500' : 'bg-gray-500'"></span>
+                                <span x-text="isOnline ? 'Online' : 'Offline'"></span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
 
         <!-- Bottom Navigation -->
         <div class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200/50 shadow-lg z-50 pb-safe rounded-t-3xl">
-            <div class="grid grid-cols-2 px-6 py-2">
+            <div class="grid grid-cols-3 px-6 py-2">
                 <button @click="currentView = 'dashboard'" class="flex flex-col items-center justify-center py-3 btn-press">
                     <div class="w-10 h-10 rounded-2xl flex items-center justify-center mb-1"
                          :class="currentView === 'dashboard' ? 'bg-blue-500 text-white' : 'text-gray-600'">
@@ -457,6 +571,16 @@
                         </svg>
                     </div>
                     <span class="text-xs font-medium" :class="currentView === 'history' ? 'text-blue-600' : 'text-gray-600'">History</span>
+                </button>
+                <button @click="currentView = 'settings'" class="flex flex-col items-center justify-center py-3 btn-press">
+                    <div class="w-10 h-10 rounded-2xl flex items-center justify-center mb-1"
+                         :class="currentView === 'settings' ? 'bg-blue-500 text-white' : 'text-gray-600'">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-medium" :class="currentView === 'settings' ? 'text-blue-600' : 'text-gray-600'">Settings</span>
                 </button>
             </div>
         </div>

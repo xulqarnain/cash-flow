@@ -627,6 +627,181 @@ function cashApp() {
             this.showSuccessMessage('Exported ' + transactions.length + ' transactions!');
         },
 
+        // Export all data (both people and transactions)
+        exportAllData() {
+            if (this.transactions.length === 0) {
+                alert('No data to export');
+                return;
+            }
+
+            let csv = 'Date,Person,Type,Amount,Category,Description\n';
+
+            this.transactions.forEach(t => {
+                const row = [
+                    t.date,
+                    this.getPersonName(t.person_id),
+                    t.type === 'give' ? 'Given' : 'Received',
+                    t.amount,
+                    t.category || 'Other',
+                    `"${(t.description || '').replace(/"/g, '""')}"`
+                ].join(',');
+                csv += row + '\n';
+            });
+
+            // Download file
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cash-flow-backup-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            this.showSuccessMessage(`Exported ${this.transactions.length} transactions successfully!`);
+        },
+
+        // Import data from CSV
+        async importFromCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const csv = e.target.result;
+                    const lines = csv.split('\n');
+
+                    // Skip header row
+                    const dataLines = lines.slice(1).filter(line => line.trim());
+
+                    let importedCount = 0;
+                    const peopleMap = new Map();
+
+                    // First, collect unique people
+                    for (const line of dataLines) {
+                        const match = line.match(/^([^,]+),([^,]+),([^,]+),([^,]+),([^,]+),(.*)$/);
+                        if (!match) continue;
+
+                        const [, , personName] = match;
+                        if (personName && !peopleMap.has(personName)) {
+                            peopleMap.set(personName, null);
+                        }
+                    }
+
+                    // Create people if they don't exist
+                    for (const personName of peopleMap.keys()) {
+                        let person = this.people.find(p => p.name === personName);
+
+                        if (!person) {
+                            // Create new person
+                            const newPerson = {
+                                name: personName,
+                                type: 'give',
+                                initial_amount: 0,
+                                created_at: new Date().toISOString()
+                            };
+                            const id = await this.addPerson(newPerson);
+                            peopleMap.set(personName, id);
+                        } else {
+                            peopleMap.set(personName, person.id);
+                        }
+                    }
+
+                    // Reload people to get updated list
+                    await this.loadPeople();
+
+                    // Now import transactions
+                    for (const line of dataLines) {
+                        const match = line.match(/^([^,]+),([^,]+),([^,]+),([^,]+),([^,]+),(.*)$/);
+                        if (!match) continue;
+
+                        const [, date, personName, type, amount, category, description] = match;
+
+                        const personId = peopleMap.get(personName);
+                        if (!personId) continue;
+
+                        const transaction = {
+                            person_id: personId,
+                            type: type.toLowerCase().includes('given') ? 'give' : 'receive',
+                            amount: parseFloat(amount),
+                            date: date,
+                            category: category === 'Other' ? '' : category,
+                            description: description.replace(/^"|"$/g, '').replace(/""/g, '"'),
+                            created_at: new Date().toISOString()
+                        };
+
+                        await this.addTransaction(transaction);
+                        importedCount++;
+                    }
+
+                    // Reload all data
+                    await this.loadPeople();
+                    await this.loadTransactions();
+
+                    this.showSuccessMessage(`Imported ${importedCount} transactions successfully!`);
+
+                    // Reset file input
+                    event.target.value = '';
+                } catch (error) {
+                    console.error('Import error:', error);
+                    alert('Failed to import data. Please check the CSV format.');
+                    event.target.value = '';
+                }
+            };
+
+            reader.readAsText(file);
+        },
+
+        // Clear all data
+        async clearAllData() {
+            if (!confirm('⚠️ WARNING: This will delete ALL people and transactions permanently. This action cannot be undone!\n\nAre you sure you want to continue?')) {
+                return;
+            }
+
+            // Double confirmation for safety
+            if (!confirm('This is your final warning! All data will be lost forever. Continue?')) {
+                return;
+            }
+
+            try {
+                if (!this.db) {
+                    alert('Database not initialized');
+                    return;
+                }
+
+                // Clear transactions
+                const txTransactions = this.db.transaction(['transactions'], 'readwrite');
+                const storeTransactions = txTransactions.objectStore('transactions');
+                await new Promise((resolve, reject) => {
+                    const request = storeTransactions.clear();
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+
+                // Clear people
+                const txPeople = this.db.transaction(['people'], 'readwrite');
+                const storePeople = txPeople.objectStore('people');
+                await new Promise((resolve, reject) => {
+                    const request = storePeople.clear();
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+
+                // Reload data
+                this.people = [];
+                this.transactions = [];
+                this.selectedPerson = null;
+
+                this.showSuccessMessage('All data cleared successfully!');
+                this.currentView = 'dashboard';
+            } catch (error) {
+                console.error('Error clearing data:', error);
+                alert('Failed to clear data. Please try again.');
+            }
+        },
+
         // Chart Data Generation
         getChartData() {
             const days = this.chartView === '7days' ? 7 : this.chartView === '30days' ? 30 : 365;
