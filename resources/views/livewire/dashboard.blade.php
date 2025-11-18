@@ -5,7 +5,7 @@
             @foreach(['January', 'February', 'March', 'April', 'May', 'June'] as $month)
                 <button
                     wire:click="selectMonth('{{ $month }}')"
-                    class="px-5 py-2.5 rounded-2xl text-sm font-medium transition-all whitespace-nowrap {{ $selectedMonth === $month ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/50' : 'text-gray-600 hover:bg-gray-50' }}"
+                    class="px-5 py-2.5 rounded-2xl text-sm font-medium whitespace-nowrap btn-press {{ $selectedMonth === $month ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/50' : 'text-gray-600 hover:bg-gray-50' }}"
                 >
                     {{ $month }}
                 </button>
@@ -89,7 +89,7 @@
     <div class="bg-white rounded-3xl shadow-xl shadow-blue-500/20 p-6 sm:p-8 mb-6">
         <div class="flex items-center justify-between mb-6">
             <h2 class="text-xl font-bold text-gray-900">Transactions</h2>
-            <button wire:click="openForm" class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/50 hover:bg-blue-600 transition-all">
+            <button wire:click="openForm" class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/50 hover:bg-blue-600 btn-press">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                 </svg>
@@ -100,7 +100,7 @@
         @forelse($people as $person)
             <button
                 wire:click="selectPerson({{ $person->id }})"
-                class="w-full mb-3 bg-gradient-to-br from-gray-50 to-blue-50/30 hover:from-blue-50 hover:to-purple-50/30 rounded-2xl p-4 transition-all text-left shadow-sm hover:shadow-md"
+                class="w-full mb-3 bg-gradient-to-br from-gray-50 to-blue-50/30 hover:from-blue-50 hover:to-purple-50/30 rounded-2xl p-4 text-left shadow-sm hover:shadow-md card-hover shadow-smooth"
             >
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-3 flex-1">
@@ -172,7 +172,7 @@
 
     <!-- Transaction Form Modal -->
     @if($showForm)
-        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" wire:click.self="cancel">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 modal-backdrop" wire:click.self="cancel">
             <div class="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg sm:mx-4 max-h-[90vh] overflow-y-auto shadow-2xl animate-slide-up">
                 <div class="sticky top-0 bg-white px-6 py-5 border-b border-gray-100 flex items-center justify-between rounded-t-3xl">
                     <h3 class="text-xl font-bold text-gray-900">{{ $isEditing ? 'Edit Transaction' : 'New Transaction' }}</h3>
@@ -223,10 +223,10 @@
                     </div>
 
                     <div class="sticky bottom-0 bg-white px-6 py-5 border-t border-gray-100 flex gap-3 rounded-b-3xl">
-                        <button type="button" wire:click="cancel" class="flex-1 px-6 py-4 border-2 border-gray-200 rounded-2xl text-base font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+                        <button type="button" wire:click="cancel" class="flex-1 px-6 py-4 border-2 border-gray-200 rounded-2xl text-base font-semibold text-gray-700 hover:bg-gray-50 btn-press">
                             Cancel
                         </button>
-                        <button type="submit" class="flex-1 px-6 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl text-base font-semibold shadow-lg shadow-blue-500/50 transition-all">
+                        <button type="submit" class="flex-1 px-6 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl text-base font-semibold shadow-lg shadow-blue-500/50 btn-press">
                             {{ $isEditing ? 'Update' : 'Save' }}
                         </button>
                     </div>
@@ -237,7 +237,7 @@
 
     <!-- Success Message -->
     @if (session()->has('message'))
-        <div class="fixed top-24 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-xl px-6 py-4 z-50 animate-bounce-in border-l-4 border-green-500">
+        <div class="fixed top-24 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-xl px-6 py-4 z-50 success-message border-l-4 border-green-500">
             <div class="flex items-center space-x-3">
                 <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                     <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
