@@ -208,6 +208,33 @@ function cashApp() {
             });
         },
 
+        async updateTransaction(id, transaction) {
+            if (!this.db) return;
+
+            return new Promise((resolve, reject) => {
+                const tx = this.db.transaction(['transactions'], 'readwrite');
+                const store = tx.objectStore('transactions');
+                transaction.id = id;
+                const request = store.put(transaction);
+
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        },
+
+        async getTransaction(id) {
+            if (!this.db) return null;
+
+            return new Promise((resolve, reject) => {
+                const tx = this.db.transaction(['transactions'], 'readonly');
+                const store = tx.objectStore('transactions');
+                const request = store.get(id);
+
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        },
+
         async deleteTransaction(id) {
             if (!confirm('Delete this transaction?')) return;
 
@@ -339,23 +366,46 @@ function cashApp() {
             }
 
             try {
-                await this.addTransaction({
+                const transactionData = {
                     person_id: this.transactionForm.person_id,
                     type: this.transactionForm.type,
                     amount: parseFloat(this.transactionForm.amount),
                     date: this.transactionForm.date,
                     category: this.transactionForm.category || 'Other',
                     description: this.transactionForm.description || '',
-                    created_at: new Date().toISOString()
-                });
+                    created_at: this.transactionForm.id ? this.transactionForm.created_at : new Date().toISOString()
+                };
+
+                if (this.transactionForm.id) {
+                    // Update existing transaction
+                    await this.updateTransaction(this.transactionForm.id, transactionData);
+                    this.showSuccessMessage('Transaction updated!');
+                } else {
+                    // Add new transaction
+                    await this.addTransaction(transactionData);
+                    this.showSuccessMessage('Transaction added!');
+                }
 
                 await this.loadTransactions();
-                this.showSuccessMessage('Transaction added!');
                 this.closeTransactionForm();
             } catch (error) {
                 console.error('Error saving transaction:', error);
                 alert('Failed to save transaction');
             }
+        },
+
+        async editTransaction(transaction) {
+            this.transactionForm = {
+                id: transaction.id,
+                person_id: transaction.person_id,
+                type: transaction.type,
+                amount: transaction.amount,
+                date: transaction.date,
+                category: transaction.category || '',
+                description: transaction.description || '',
+                created_at: transaction.created_at
+            };
+            this.showTransactionForm = true;
         },
 
         // Calculations
@@ -397,6 +447,26 @@ function cashApp() {
 
         getPersonTransactionCount(personId) {
             return this.transactions.filter(t => t.person_id === personId).length;
+        },
+
+        getPersonGiveCount(personId) {
+            return this.transactions.filter(t => t.person_id === personId && t.type === 'give').length;
+        },
+
+        getPersonReceiveCount(personId) {
+            return this.transactions.filter(t => t.person_id === personId && t.type === 'receive').length;
+        },
+
+        getPersonGiveTotal(personId) {
+            return this.transactions
+                .filter(t => t.person_id === personId && t.type === 'give')
+                .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+        },
+
+        getPersonReceiveTotal(personId) {
+            return this.transactions
+                .filter(t => t.person_id === personId && t.type === 'receive')
+                .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
         },
 
         // UI helpers
