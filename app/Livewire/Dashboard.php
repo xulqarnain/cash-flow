@@ -11,6 +11,7 @@ class Dashboard extends Component
 {
     use WithPagination;
 
+    public $selectedMonth;
     public $selectedPersonId = null;
     public $selectedPerson = null;
     public $showTransactions = false;
@@ -28,6 +29,16 @@ class Dashboard extends Component
     // Filters
     public $filterDirection = '';
     public $filterMethod = '';
+
+    public function mount()
+    {
+        $this->selectedMonth = now()->format('F');
+    }
+
+    public function selectMonth($month)
+    {
+        $this->selectedMonth = $month;
+    }
 
     protected $rules = [
         'amount' => 'required|numeric|min:0.01',
