@@ -8,8 +8,10 @@ function cashApp() {
     return {
         // State
         currentView: 'dashboard',
-        selectedMonth: 'January',
+        selectedPerson: null,
         showPersonForm: false,
+        showTransactionForm: false,
+        showCategoryForm: false,
         showSuccess: false,
         successMessage: '',
 
@@ -19,12 +21,26 @@ function cashApp() {
             name: '',
             type: 'give',
             amount: '',
-            date: new Date().toISOString().split('T')[0]
+            date: new Date().toISOString().split('T')[0],
+            category: '',
+            description: ''
+        },
+
+        transactionForm: {
+            id: null,
+            person_id: null,
+            type: 'give',
+            amount: '',
+            date: new Date().toISOString().split('T')[0],
+            category: '',
+            description: ''
         },
 
         // Data
         people: [],
         transactions: [],
+        categories: ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Other'],
+        customCategories: [],
 
         // Database
         db: null,
@@ -33,6 +49,7 @@ function cashApp() {
         async init() {
             console.log('Initializing Cash Record App...');
             await this.initDatabase();
+            await this.loadCustomCategories();
             await this.loadData();
             console.log('App initialized successfully');
         },
@@ -40,7 +57,7 @@ function cashApp() {
         // Database Initialization
         async initDatabase() {
             return new Promise((resolve, reject) => {
-                const request = indexedDB.open('CashRecordDB', 1);
+                const request = indexedDB.open('CashRecordDB', 2);
 
                 request.onerror = () => {
                     console.error('Database error:', request.error);
@@ -69,6 +86,12 @@ function cashApp() {
                         txStore.createIndex('person_id', 'person_id', { unique: false });
                         txStore.createIndex('date', 'date', { unique: false });
                         txStore.createIndex('type', 'type', { unique: false });
+                        txStore.createIndex('category', 'category', { unique: false });
+                    }
+
+                    // Create categories store
+                    if (!db.objectStoreNames.contains('categories')) {
+                        db.createObjectStore('categories', { keyPath: 'id', autoIncrement: true });
                     }
 
                     console.log('Database schema created');
@@ -118,30 +141,14 @@ function cashApp() {
             });
         },
 
-        async updatePerson(id, person) {
-            if (!this.db) return;
-
-            return new Promise((resolve, reject) => {
-                const tx = this.db.transaction(['people'], 'readwrite');
-                const store = tx.objectStore('people');
-                person.id = id;
-                const request = store.put(person);
-
-                request.onsuccess = () => resolve();
-                request.onerror = () => reject(request.error);
-            });
-        },
-
         async deletePerson(id) {
             if (!confirm('Delete this person and all their transactions?')) return;
 
             if (!this.db) return;
 
             try {
-                // Delete all transactions for this person
                 await this.deleteTransactionsByPerson(id);
 
-                // Delete the person
                 await new Promise((resolve, reject) => {
                     const tx = this.db.transaction(['people'], 'readwrite');
                     const store = tx.objectStore('people');
@@ -150,6 +157,10 @@ function cashApp() {
                     request.onsuccess = () => resolve();
                     request.onerror = () => reject(request.error);
                 });
+
+                if (this.selectedPerson?.id === id) {
+                    this.selectedPerson = null;
+                }
 
                 await this.loadData();
                 this.showSuccessMessage('Person deleted successfully!');
@@ -243,6 +254,47 @@ function cashApp() {
             });
         },
 
+        // Categories
+        async loadCustomCategories() {
+            if (!this.db) return;
+
+            return new Promise((resolve, reject) => {
+                const tx = this.db.transaction(['categories'], 'readonly');
+                const store = tx.objectStore('categories');
+                const request = store.getAll();
+
+                request.onsuccess = () => {
+                    this.customCategories = request.result.map(c => c.name);
+                    resolve();
+                };
+
+                request.onerror = () => reject(request.error);
+            });
+        },
+
+        async addCategory(name) {
+            if (!this.db || !name.trim()) return;
+
+            const category = { name: name.trim() };
+
+            return new Promise((resolve, reject) => {
+                const tx = this.db.transaction(['categories'], 'readwrite');
+                const store = tx.objectStore('categories');
+                const request = store.add(category);
+
+                request.onsuccess = () => {
+                    this.customCategories.push(name.trim());
+                    resolve();
+                };
+
+                request.onerror = () => reject(request.error);
+            });
+        },
+
+        getAllCategories() {
+            return [...this.categories, ...this.customCategories];
+        },
+
         // Form handling
         async savePerson() {
             if (!this.personForm.name.trim()) {
@@ -256,14 +308,7 @@ function cashApp() {
                     created_at: new Date().toISOString()
                 };
 
-                let personId;
-
-                if (this.personForm.id) {
-                    await this.updatePerson(this.personForm.id, person);
-                    personId = this.personForm.id;
-                } else {
-                    personId = await this.addPerson(person);
-                }
+                const personId = await this.addPerson(person);
 
                 // Add initial transaction if amount provided
                 if (this.personForm.amount && parseFloat(this.personForm.amount) > 0) {
@@ -272,16 +317,44 @@ function cashApp() {
                         type: this.personForm.type,
                         amount: parseFloat(this.personForm.amount),
                         date: this.personForm.date,
+                        category: this.personForm.category || 'Other',
+                        description: this.personForm.description || '',
                         created_at: new Date().toISOString()
                     });
                 }
 
                 await this.loadData();
-                this.showSuccessMessage('Saved successfully!');
+                this.showSuccessMessage('Person added successfully!');
                 this.closePersonForm();
             } catch (error) {
                 console.error('Error saving person:', error);
                 alert('Failed to save. Please try again.');
+            }
+        },
+
+        async saveTransaction() {
+            if (!this.transactionForm.person_id || !this.transactionForm.amount) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            try {
+                await this.addTransaction({
+                    person_id: this.transactionForm.person_id,
+                    type: this.transactionForm.type,
+                    amount: parseFloat(this.transactionForm.amount),
+                    date: this.transactionForm.date,
+                    category: this.transactionForm.category || 'Other',
+                    description: this.transactionForm.description || '',
+                    created_at: new Date().toISOString()
+                });
+
+                await this.loadTransactions();
+                this.showSuccessMessage('Transaction added!');
+                this.closeTransactionForm();
+            } catch (error) {
+                console.error('Error saving transaction:', error);
+                alert('Failed to save transaction');
             }
         },
 
@@ -318,6 +391,10 @@ function cashApp() {
             return person ? person.name : 'Unknown';
         },
 
+        getPersonTransactions(personId) {
+            return this.transactions.filter(t => t.person_id === personId);
+        },
+
         getPersonTransactionCount(personId) {
             return this.transactions.filter(t => t.person_id === personId).length;
         },
@@ -325,6 +402,14 @@ function cashApp() {
         // UI helpers
         switchView(view) {
             this.currentView = view;
+            if (view === 'dashboard') {
+                this.selectedPerson = null;
+            }
+        },
+
+        selectPerson(person) {
+            this.selectedPerson = person;
+            this.currentView = 'person-detail';
         },
 
         openPersonForm() {
@@ -333,7 +418,9 @@ function cashApp() {
                 name: '',
                 type: 'give',
                 amount: '',
-                date: new Date().toISOString().split('T')[0]
+                date: new Date().toISOString().split('T')[0],
+                category: '',
+                description: ''
             };
             this.showPersonForm = true;
         },
@@ -342,11 +429,29 @@ function cashApp() {
             this.showPersonForm = false;
         },
 
+        openTransactionForm(person) {
+            this.transactionForm = {
+                id: null,
+                person_id: person.id,
+                type: 'give',
+                amount: '',
+                date: new Date().toISOString().split('T')[0],
+                category: '',
+                description: ''
+            };
+            this.showTransactionForm = true;
+        },
+
+        closeTransactionForm() {
+            this.showTransactionForm = false;
+        },
+
         showSuccessMessage(message) {
             this.successMessage = message;
             this.showSuccess = true;
             setTimeout(() => {
                 this.showSuccess = false;
+                this.successMessage = '';
             }, 3000);
         },
 
@@ -364,6 +469,10 @@ function cashApp() {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0
             }).format(amount || 0);
+        },
+
+        isOnline() {
+            return navigator.onLine;
         }
     };
 }
