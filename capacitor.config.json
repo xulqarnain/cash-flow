@@ -1,0 +1,10 @@
+{
+  "appId": "com.cashrecord.app",
+  "appName": "Cash Record",
+  "webDir": "public",
+  "server": {
+    "url": "http://localhost:8000",
+    "cleartext": true,
+    "androidScheme": "http"
+  }
+}
