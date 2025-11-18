@@ -43,7 +43,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <h1 class="text-white text-lg sm:text-xl font-semibold">Your Money</h1>
-                        <p class="text-blue-100 text-2xl sm:text-3xl font-bold mt-1" x-text="'₹' + formatCurrency(getTotalBalance())"></p>
+                        <p class="text-blue-100 text-2xl sm:text-3xl font-bold mt-1" x-text="'₹' + formatNumber(getTotalBalance())"></p>
                     </div>
                     <button class="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
                         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,7 +84,7 @@
                                 </div>
                                 <span class="text-gray-500 text-sm font-medium">In Flow</span>
                             </div>
-                            <p class="text-2xl sm:text-3xl font-bold text-gray-900" x-text="'₹' + formatCurrency(getTotalInFlow())"></p>
+                            <p class="text-2xl sm:text-3xl font-bold text-gray-900" x-text="'₹' + formatNumber(getTotalInFlow())"></p>
                         </div>
 
                         <!-- Out Flow -->
@@ -97,7 +97,7 @@
                                 </div>
                                 <span class="text-gray-500 text-sm font-medium">Out Flow</span>
                             </div>
-                            <p class="text-2xl sm:text-3xl font-bold text-gray-900" x-text="'₹' + formatCurrency(getTotalOutFlow())"></p>
+                            <p class="text-2xl sm:text-3xl font-bold text-gray-900" x-text="'₹' + formatNumber(getTotalOutFlow())"></p>
                         </div>
                     </div>
 
@@ -105,7 +105,7 @@
                     <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 mb-6">
                         <p class="text-gray-600 text-sm font-medium mb-1">Net Balance</p>
                         <p class="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
-                           x-text="'₹' + formatCurrency(getTotalBalance())"></p>
+                           x-text="'₹' + formatNumber(getTotalBalance())"></p>
                     </div>
 
                     <!-- Simple Chart -->
@@ -149,7 +149,7 @@
                                 <div class="text-right ml-3">
                                     <p class="font-bold"
                                        :class="getPersonBalance(person.id) >= 0 ? 'text-green-600' : 'text-pink-600'"
-                                       x-text="(getPersonBalance(person.id) >= 0 ? '+' : '–') + ' ₹' + formatCurrency(Math.abs(getPersonBalance(person.id)))"></p>
+                                       x-text="(getPersonBalance(person.id) >= 0 ? '+' : '–') + ' ₹' + formatNumber(Math.abs(getPersonBalance(person.id)))"></p>
                                 </div>
                             </div>
                         </button>
@@ -181,7 +181,7 @@
                                 </div>
                                 <p class="font-bold ml-3"
                                    :class="transaction.direction === 'get' ? 'text-green-600' : 'text-pink-600'"
-                                   x-text="(transaction.direction === 'get' ? '+' : '–') + ' ₹' + formatCurrency(transaction.amount)"></p>
+                                   x-text="(transaction.direction === 'get' ? '+' : '–') + ' ₹' + formatNumber(transaction.amount)"></p>
                             </div>
                         </div>
                     </template>
@@ -228,35 +228,21 @@
                     <div class="px-6 py-6 space-y-5">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Name *</label>
-                            <input x-model="personForm.name" type="text" required
+                            <input x-model="form.name" type="text" required
                                    class="w-full px-4 py-3.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 font-medium"
                                    placeholder="Enter person's name">
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Type *</label>
-                            <div class="grid grid-cols-2 gap-3">
-                                <button type="button" @click="personForm.type = 'give'"
-                                    :class="personForm.type === 'give' ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-700'"
-                                    class="px-4 py-3.5 rounded-2xl font-semibold btn-press">
-                                    💸 Give Money
-                                </button>
-                                <button type="button" @click="personForm.type = 'receive'"
-                                    :class="personForm.type === 'receive' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-700'"
-                                    class="px-4 py-3.5 rounded-2xl font-semibold btn-press">
-                                    💰 Receive Money
-                                </button>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Initial Amount (Optional)</label>
-                            <input x-model="personForm.amount" type="number" step="0.01" min="0"
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Phone</label>
+                            <input x-model="form.phone" type="tel"
                                    class="w-full px-4 py-3.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 font-medium"
-                                   placeholder="Enter amount">
+                                   placeholder="Enter phone number">
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Date *</label>
-                            <input x-model="personForm.date" type="date" required
-                                   class="w-full px-4 py-3.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 font-medium">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                            <input x-model="form.email" type="email"
+                                   class="w-full px-4 py-3.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 font-medium"
+                                   placeholder="Enter email">
                         </div>
                     </div>
                     <div class="sticky bottom-0 bg-white px-6 py-5 border-t border-gray-100 flex gap-3 rounded-b-3xl">
