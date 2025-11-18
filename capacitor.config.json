@@ -1,10 +1,16 @@
 {
   "appId": "com.cashrecord.app",
   "appName": "Cash Record",
-  "webDir": "public",
-  "server": {
-    "url": "http://localhost:8000",
-    "cleartext": true,
-    "androidScheme": "http"
+  "webDir": "offline-app",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#5468ff",
+      "showSpinner": false
+    }
   }
 }
