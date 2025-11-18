@@ -41,8 +41,15 @@
         <div class="bg-gradient-to-r from-blue-500 to-blue-600 pt-safe">
             <div class="max-w-7xl mx-auto px-4 py-4 sm:py-6">
                 <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-white text-lg sm:text-xl font-semibold">Your Money</h1>
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-2 mb-1">
+                            <h1 class="text-white text-lg sm:text-xl font-semibold">Your Money</h1>
+                            <span class="flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium"
+                                  :class="isOnline() ? 'bg-green-500/20 text-green-100' : 'bg-red-500/20 text-red-100'">
+                                <span class="w-1.5 h-1.5 rounded-full" :class="isOnline() ? 'bg-green-300' : 'bg-red-300'"></span>
+                                <span x-text="isOnline() ? 'Online' : 'Offline'"></span>
+                            </span>
+                        </div>
                         <p class="text-blue-100 text-2xl sm:text-3xl font-bold mt-1" x-text="'₹' + formatCurrency(getTotalBalance())"></p>
                     </div>
                     <button class="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -172,16 +179,40 @@
 
                 <div class="bg-white rounded-3xl shadow-xl shadow-blue-500/20 p-6 mb-6">
                     <h2 class="text-lg font-bold text-gray-900 mb-4">All Transactions</h2>
+
+                    <div x-show="transactions.length === 0" class="text-center py-12 text-gray-500">
+                        No transactions yet. Add a person to get started!
+                    </div>
+
                     <template x-for="transaction in transactions" :key="transaction.id">
-                        <div class="mb-3 bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-2xl p-4">
-                            <div class="flex items-center justify-between">
-                                <div class="flex-1">
-                                    <p class="font-semibold text-gray-900" x-text="getPerson(transaction.person_id)?.name || 'Unknown'"></p>
-                                    <p class="text-xs text-gray-500" x-text="transaction.description"></p>
+                        <div class="mb-3 bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-2xl p-4 hover:shadow-md transition-shadow">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center space-x-2 mb-1">
+                                        <p class="font-semibold text-gray-900" x-text="getPersonName(transaction.person_id)"></p>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                                              :class="{
+                                                'bg-orange-100 text-orange-700': transaction.category === 'Food',
+                                                'bg-blue-100 text-blue-700': transaction.category === 'Transport',
+                                                'bg-pink-100 text-pink-700': transaction.category === 'Shopping',
+                                                'bg-red-100 text-red-700': transaction.category === 'Bills',
+                                                'bg-purple-100 text-purple-700': transaction.category === 'Entertainment',
+                                                'bg-green-100 text-green-700': transaction.category === 'Health',
+                                                'bg-gray-100 text-gray-700': !['Food','Transport','Shopping','Bills','Entertainment','Health'].includes(transaction.category)
+                                              }"
+                                              x-text="transaction.category || 'Other'"></span>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-1" x-show="transaction.description" x-text="transaction.description"></p>
+                                    <p class="text-xs text-gray-400" x-text="formatDate(transaction.date)"></p>
                                 </div>
-                                <p class="font-bold ml-3"
-                                   :class="transaction.direction === 'get' ? 'text-green-600' : 'text-pink-600'"
-                                   x-text="(transaction.direction === 'get' ? '+' : '–') + ' ₹' + formatCurrency(transaction.amount)"></p>
+                                <div class="ml-3 text-right flex-shrink-0">
+                                    <p class="font-bold text-lg"
+                                       :class="transaction.type === 'receive' ? 'text-green-600' : 'text-red-600'"
+                                       x-text="(transaction.type === 'receive' ? '+' : '−') + ' ₹' + formatCurrency(transaction.amount)"></p>
+                                    <button @click="deleteTransaction(transaction.id)" class="mt-1 text-xs text-gray-400 hover:text-red-600">
+                                        Delete
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </template>
@@ -258,6 +289,21 @@
                             <input x-model="personForm.date" type="date" required
                                    class="w-full px-4 py-3.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 font-medium">
                         </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                            <select x-model="personForm.category" class="w-full px-4 py-3.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 font-medium">
+                                <option value="">Select category</option>
+                                <template x-for="cat in getAllCategories()" :key="cat">
+                                    <option :value="cat" x-text="cat"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Description (Optional)</label>
+                            <textarea x-model="personForm.description" rows="2"
+                                      class="w-full px-4 py-3.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 font-medium"
+                                      placeholder="Add a note about this transaction..."></textarea>
+                        </div>
                     </div>
                     <div class="sticky bottom-0 bg-white px-6 py-5 border-t border-gray-100 flex gap-3 rounded-b-3xl">
                         <button type="button" @click="showPersonForm = false" class="flex-1 px-6 py-4 border-2 border-gray-200 rounded-2xl text-base font-semibold text-gray-700 hover:bg-gray-50 btn-press">
@@ -272,7 +318,7 @@
         </div>
 
         <!-- Success Message -->
-        <div x-show="successMessage" x-transition class="fixed top-24 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-xl px-6 py-4 z-50 success-message border-l-4 border-green-500">
+        <div x-show="showSuccess" x-transition class="fixed top-24 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-xl px-6 py-4 z-50 success-message border-l-4 border-green-500">
             <div class="flex items-center space-x-3">
                 <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
                     <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
