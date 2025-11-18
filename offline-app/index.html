@@ -50,7 +50,7 @@
                                 <span x-text="isOnline() ? 'Online' : 'Offline'"></span>
                             </span>
                         </div>
-                        <p class="text-blue-100 text-2xl sm:text-3xl font-bold mt-1" x-text="'₹' + formatCurrency(getTotalBalance())"></p>
+                        <p class="text-blue-100 text-2xl sm:text-3xl font-bold mt-1" x-text="Rs  + formatCurrency(getTotalBalance())"></p>
                     </div>
                     <button class="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
                         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,7 +91,7 @@
                                 </div>
                                 <span class="text-gray-500 text-sm font-medium">In Flow</span>
                             </div>
-                            <p class="text-2xl sm:text-3xl font-bold text-gray-900" x-text="'₹' + formatCurrency(getTotalInFlow())"></p>
+                            <p class="text-2xl sm:text-3xl font-bold text-gray-900" x-text="Rs  + formatCurrency(getTotalInFlow())"></p>
                         </div>
 
                         <!-- Out Flow -->
@@ -104,7 +104,7 @@
                                 </div>
                                 <span class="text-gray-500 text-sm font-medium">Out Flow</span>
                             </div>
-                            <p class="text-2xl sm:text-3xl font-bold text-gray-900" x-text="'₹' + formatCurrency(getTotalOutFlow())"></p>
+                            <p class="text-2xl sm:text-3xl font-bold text-gray-900" x-text="Rs  + formatCurrency(getTotalOutFlow())"></p>
                         </div>
                     </div>
 
@@ -112,17 +112,100 @@
                     <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 mb-6">
                         <p class="text-gray-600 text-sm font-medium mb-1">Net Balance</p>
                         <p class="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
-                           x-text="'₹' + formatCurrency(getTotalBalance())"></p>
+                           x-text="Rs  + formatCurrency(getTotalBalance())"></p>
                     </div>
 
-                    <!-- Simple Chart -->
-                    <div class="relative h-48 bg-gradient-to-br from-gray-50 to-blue-50 rounded-2xl p-4">
-                        <div class="absolute inset-0 flex items-end justify-around p-4">
-                            <template x-for="i in 7" :key="i">
-                                <div class="flex flex-col items-center space-y-2">
-                                    <div class="w-8 sm:w-10 bg-gradient-to-t from-pink-400 to-pink-300 rounded-t-lg shadow-lg"
-                                         :style="`height: ${40 + Math.random() * 50}%`"></div>
-                                    <span class="text-xs text-gray-500 font-medium" x-text="i"></span>
+                    <!-- Cash Flow Chart -->
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-semibold text-gray-700">Cash Flow Trend</h3>
+                            <div class="flex space-x-1 bg-gray-100 rounded-xl p-1">
+                                <button @click="chartView = '7days'" :class="chartView === '7days' ? 'bg-white shadow-sm' : ''" class="px-3 py-1 text-xs font-medium rounded-lg">7 Days</button>
+                                <button @click="chartView = '30days'" :class="chartView === '30days' ? 'bg-white shadow-sm' : ''" class="px-3 py-1 text-xs font-medium rounded-lg">30 Days</button>
+                            </div>
+                        </div>
+
+                        <div class="relative h-48 bg-gradient-to-br from-gray-50 to-blue-50 rounded-2xl p-4">
+                            <div class="absolute inset-x-4 top-4 flex justify-between text-xs text-gray-400">
+                                <span x-text="'Max: Rs ' + formatCurrency(getChartMaxValue())"></span>
+                            </div>
+
+                            <div class="h-full flex items-end justify-between pt-8 pb-6 px-2 space-x-1">
+                                <template x-for="(data, index) in getChartData()" :key="data.date">
+                                    <div class="flex-1 flex flex-col items-center space-y-1" :class="chartView === '30days' ? 'min-w-0' : 'min-w-8'">
+                                        <div class="relative w-full flex justify-center space-x-0.5">
+                                            <!-- Received (Green Bar) -->
+                                            <div class="flex-1 bg-gradient-to-t from-green-400 to-green-300 rounded-t-md shadow"
+                                                 :style="`height: ${getChartBarHeight(data.income)}px; max-height: 120px`"
+                                                 :title="`Received: Rs ${formatCurrency(data.income)}`">
+                                            </div>
+                                            <!-- Given (Red Bar) -->
+                                            <div class="flex-1 bg-gradient-to-t from-red-400 to-red-300 rounded-t-md shadow"
+                                                 :style="`height: ${getChartBarHeight(data.expense)}px; max-height: 120px`"
+                                                 :title="`Given: Rs ${formatCurrency(data.expense)}`">
+                                            </div>
+                                        </div>
+                                        <span class="text-[8px] sm:text-xs text-gray-500 font-medium truncate w-full text-center"
+                                              x-show="chartView === '7days' || index % 3 === 0"
+                                              x-text="chartView === '7days' ? data.label.split(' ')[0] : data.label.split(' ')[0]"></span>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <div class="absolute bottom-2 right-4 flex items-center space-x-3 text-xs">
+                                <div class="flex items-center space-x-1">
+                                    <div class="w-3 h-3 bg-green-400 rounded"></div>
+                                    <span class="text-gray-600">Received</span>
+                                </div>
+                                <div class="flex items-center space-x-1">
+                                    <div class="w-3 h-3 bg-red-400 rounded"></div>
+                                    <span class="text-gray-600">Given</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Insights -->
+                <div class="bg-white rounded-3xl shadow-xl shadow-blue-500/20 p-6 mb-6" x-show="transactions.length > 0">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-4">Quick Insights</h3>
+
+                    <div class="grid grid-cols-3 gap-3 mb-4">
+                        <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-3 text-center">
+                            <p class="text-2xl font-bold text-blue-600" x-text="people.length"></p>
+                            <p class="text-xs text-gray-600 mt-1">People</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-green-50 to-teal-50 rounded-xl p-3 text-center">
+                            <p class="text-2xl font-bold text-green-600" x-text="transactions.length"></p>
+                            <p class="text-xs text-gray-600 mt-1">Total Txns</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl p-3 text-center">
+                            <p class="text-2xl font-bold text-orange-600" x-text="Object.keys(getCategoryStats()).length"></p>
+                            <p class="text-xs text-gray-600 mt-1">Categories</p>
+                        </div>
+                    </div>
+
+                    <!-- Top Categories -->
+                    <div x-show="Object.keys(getCategoryStats()).length > 0">
+                        <h4 class="text-xs font-semibold text-gray-600 mb-2">Top Spending Categories</h4>
+                        <div class="space-y-2">
+                            <template x-for="[category, data] in Object.entries(getCategoryStats()).sort((a, b) => b[1].total - a[1].total).slice(0, 3)" :key="category">
+                                <div class="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                                              :class="{
+                                                'bg-orange-100 text-orange-700': category === 'Food',
+                                                'bg-blue-100 text-blue-700': category === 'Transport',
+                                                'bg-pink-100 text-pink-700': category === 'Shopping',
+                                                'bg-red-100 text-red-700': category === 'Bills',
+                                                'bg-purple-100 text-purple-700': category === 'Entertainment',
+                                                'bg-green-100 text-green-700': category === 'Health',
+                                                'bg-gray-100 text-gray-700': !['Food','Transport','Shopping','Bills','Entertainment','Health'].includes(category)
+                                              }"
+                                              x-text="category"></span>
+                                        <span class="text-xs text-gray-500" x-text="data.count + ' txns'"></span>
+                                    </div>
+                                    <span class="text-sm font-bold text-gray-900" x-text="'Rs ' + formatCurrency(data.total)"></span>
                                 </div>
                             </template>
                         </div>
@@ -156,7 +239,7 @@
                                 <div class="text-right ml-3">
                                     <p class="font-bold"
                                        :class="getPersonBalance(person.id) >= 0 ? 'text-green-600' : 'text-pink-600'"
-                                       x-text="(getPersonBalance(person.id) >= 0 ? '+' : '–') + ' ₹' + formatCurrency(Math.abs(getPersonBalance(person.id)))"></p>
+                                       x-text="(getPersonBalance(person.id) >= 0 ? '+' : '–') + ' Rs ' + formatCurrency(Math.abs(getPersonBalance(person.id)))"></p>
                                 </div>
                             </div>
                         </button>
@@ -196,16 +279,16 @@
                 <div class="grid grid-cols-3 gap-4 mb-6">
                     <div class="bg-white rounded-2xl shadow-lg p-4 text-center">
                         <p class="text-xs text-gray-600 mb-1">Total Balance</p>
-                        <p class="text-xl font-bold" :class="getPersonBalance(selectedPerson.id) >= 0 ? 'text-green-600' : 'text-red-600'" x-text="'₹' + formatCurrency(Math.abs(getPersonBalance(selectedPerson.id)))"></p>
+                        <p class="text-xl font-bold" :class="getPersonBalance(selectedPerson.id) >= 0 ? 'text-green-600' : 'text-red-600'" x-text="Rs  + formatCurrency(Math.abs(getPersonBalance(selectedPerson.id)))"></p>
                     </div>
                     <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl shadow-lg p-4 text-center">
                         <p class="text-xs text-red-700 mb-1">Given</p>
-                        <p class="text-xl font-bold text-red-600" x-text="'₹' + formatCurrency(getPersonGiveTotal(selectedPerson.id))"></p>
+                        <p class="text-xl font-bold text-red-600" x-text="Rs  + formatCurrency(getPersonGiveTotal(selectedPerson.id))"></p>
                         <p class="text-xs text-red-600" x-text="getPersonGiveCount(selectedPerson.id) + ' times'"></p>
                     </div>
                     <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl shadow-lg p-4 text-center">
                         <p class="text-xs text-green-700 mb-1">Received</p>
-                        <p class="text-xl font-bold text-green-600" x-text="'₹' + formatCurrency(getPersonReceiveTotal(selectedPerson.id))"></p>
+                        <p class="text-xl font-bold text-green-600" x-text="Rs  + formatCurrency(getPersonReceiveTotal(selectedPerson.id))"></p>
                         <p class="text-xs text-green-600" x-text="getPersonReceiveCount(selectedPerson.id) + ' times'"></p>
                     </div>
                 </div>
@@ -254,7 +337,7 @@
                                 <div class="ml-3 text-right flex-shrink-0">
                                     <p class="font-bold text-lg"
                                        :class="transaction.type === 'receive' ? 'text-green-600' : 'text-red-600'"
-                                       x-text="(transaction.type === 'receive' ? '+' : '−') + ' ₹' + formatCurrency(transaction.amount)"></p>
+                                       x-text="(transaction.type === 'receive' ? '+' : '−') + ' Rs ' + formatCurrency(transaction.amount)"></p>
                                     <div class="mt-1 flex space-x-2 justify-end">
                                         <button @click="editTransaction(transaction)" class="text-xs text-blue-600 hover:text-blue-700">
                                             Edit
@@ -272,17 +355,51 @@
             <!-- History View -->
             <div x-show="currentView === 'history'" class="pb-6">
                 <div class="bg-white rounded-3xl shadow-xl shadow-blue-500/20 p-6 mb-6">
-                    <h1 class="text-2xl font-bold text-gray-900">History Transactions</h1>
+                    <h1 class="text-2xl font-bold text-gray-900 mb-4">History Transactions</h1>
+
+                    <!-- Search Bar -->
+                    <div class="mb-4">
+                        <div class="relative">
+                            <input x-model="searchQuery" type="text" placeholder="Search by person, category, or description..."
+                                   class="w-full px-4 py-3 pl-10 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500">
+                            <svg class="w-5 h-5 text-gray-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Filter Buttons -->
+                    <div class="flex items-center justify-between mb-4 gap-2">
+                        <div class="flex space-x-2 flex-wrap">
+                            <button @click="dateFilter = 'all'" :class="dateFilter === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'"
+                                    class="px-3 py-1.5 rounded-xl text-sm font-medium btn-press">All</button>
+                            <button @click="dateFilter = 'today'" :class="dateFilter === 'today' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'"
+                                    class="px-3 py-1.5 rounded-xl text-sm font-medium btn-press">Today</button>
+                            <button @click="dateFilter = 'week'" :class="dateFilter === 'week' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'"
+                                    class="px-3 py-1.5 rounded-xl text-sm font-medium btn-press">Week</button>
+                            <button @click="dateFilter = 'month'" :class="dateFilter === 'month' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'"
+                                    class="px-3 py-1.5 rounded-xl text-sm font-medium btn-press">Month</button>
+                        </div>
+                        <button @click="exportToCSV()" class="px-4 py-1.5 bg-green-500 text-white rounded-xl text-sm font-medium btn-press flex items-center space-x-1 flex-shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <span>Export</span>
+                        </button>
+                    </div>
+
+                    <!-- Results Count -->
+                    <div class="text-sm text-gray-600 mb-3">
+                        <span x-text="getFilteredTransactions().length + ' transaction(s)'"></span>
+                    </div>
                 </div>
 
                 <div class="bg-white rounded-3xl shadow-xl shadow-blue-500/20 p-6 mb-6">
-                    <h2 class="text-lg font-bold text-gray-900 mb-4">All Transactions</h2>
-
-                    <div x-show="transactions.length === 0" class="text-center py-12 text-gray-500">
-                        No transactions yet. Add a person to get started!
+                    <div x-show="getFilteredTransactions().length === 0" class="text-center py-12 text-gray-500">
+                        No transactions found. Try adjusting your filters.
                     </div>
 
-                    <template x-for="transaction in transactions" :key="transaction.id">
+                    <template x-for="transaction in getFilteredTransactions()" :key="transaction.id">
                         <div class="mb-3 bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-2xl p-4 hover:shadow-md transition-shadow">
                             <div class="flex items-start justify-between">
                                 <div class="flex-1 min-w-0">
@@ -306,7 +423,7 @@
                                 <div class="ml-3 text-right flex-shrink-0">
                                     <p class="font-bold text-lg"
                                        :class="transaction.type === 'receive' ? 'text-green-600' : 'text-red-600'"
-                                       x-text="(transaction.type === 'receive' ? '+' : '−') + ' ₹' + formatCurrency(transaction.amount)"></p>
+                                       x-text="(transaction.type === 'receive' ? '+' : '−') + ' Rs ' + formatCurrency(transaction.amount)"></p>
                                     <div class="mt-1 flex space-x-2 justify-end">
                                         <button @click="editTransaction(transaction)" class="text-xs text-blue-600 hover:text-blue-700">Edit</button>
                                         <button @click="deleteTransaction(transaction.id)" class="text-xs text-gray-400 hover:text-red-600">

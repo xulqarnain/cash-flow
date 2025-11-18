@@ -14,6 +14,9 @@ function cashApp() {
         showCategoryForm: false,
         showSuccess: false,
         successMessage: '',
+        dateFilter: 'all', // 'all', 'today', 'week', 'month', 'custom'
+        searchQuery: '',
+        chartView: '7days', // '7days', '30days', 'year'
 
         // Form Data
         personForm: {
@@ -543,6 +546,180 @@ function cashApp() {
 
         isOnline() {
             return navigator.onLine;
+        },
+
+        // Filtering & Search
+        getFilteredTransactions() {
+            let filtered = this.transactions;
+
+            // Date filter
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            switch(this.dateFilter) {
+                case 'today':
+                    filtered = filtered.filter(t => {
+                        const txDate = new Date(t.date);
+                        return txDate >= today;
+                    });
+                    break;
+                case 'week':
+                    const weekAgo = new Date(today);
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    filtered = filtered.filter(t => new Date(t.date) >= weekAgo);
+                    break;
+                case 'month':
+                    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                    filtered = filtered.filter(t => new Date(t.date) >= monthStart);
+                    break;
+            }
+
+            // Search filter
+            if (this.searchQuery.trim()) {
+                const query = this.searchQuery.toLowerCase();
+                filtered = filtered.filter(t => {
+                    const personName = this.getPersonName(t.person_id).toLowerCase();
+                    const category = (t.category || '').toLowerCase();
+                    const description = (t.description || '').toLowerCase();
+                    return personName.includes(query) ||
+                           category.includes(query) ||
+                           description.includes(query);
+                });
+            }
+
+            return filtered;
+        },
+
+        // Export to CSV
+        exportToCSV() {
+            const transactions = this.getFilteredTransactions();
+
+            if (transactions.length === 0) {
+                alert('No transactions to export');
+                return;
+            }
+
+            let csv = 'Date,Person,Type,Amount,Category,Description\n';
+
+            transactions.forEach(t => {
+                const row = [
+                    t.date,
+                    this.getPersonName(t.person_id),
+                    t.type === 'give' ? 'Given' : 'Received',
+                    t.amount,
+                    t.category || 'Other',
+                    `"${(t.description || '').replace(/"/g, '""')}"`
+                ].join(',');
+                csv += row + '\n';
+            });
+
+            // Download file
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cash-record-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            this.showSuccessMessage('Exported ' + transactions.length + ' transactions!');
+        },
+
+        // Chart Data Generation
+        getChartData() {
+            const days = this.chartView === '7days' ? 7 : this.chartView === '30days' ? 30 : 365;
+            const data = [];
+            const now = new Date();
+
+            for (let i = days - 1; i >= 0; i--) {
+                const date = new Date(now);
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+
+                const dayTransactions = this.transactions.filter(t => t.date === dateStr);
+                const income = dayTransactions
+                    .filter(t => t.type === 'receive')
+                    .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+                const expense = dayTransactions
+                    .filter(t => t.type === 'give')
+                    .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+
+                data.push({
+                    date: dateStr,
+                    label: date.getDate() + ' ' + date.toLocaleDateString('en-US', { month: 'short' }),
+                    income,
+                    expense,
+                    net: income - expense
+                });
+            }
+
+            return data;
+        },
+
+        getChartMaxValue() {
+            const data = this.getChartData();
+            const max = Math.max(
+                ...data.map(d => Math.max(d.income, d.expense))
+            );
+            return max || 100;
+        },
+
+        getChartBarHeight(value) {
+            const max = this.getChartMaxValue();
+            return (value / max) * 100;
+        },
+
+        // Statistics
+        getCategoryStats() {
+            const stats = {};
+            const allCategories = [...new Set(this.transactions.map(t => t.category || 'Other'))];
+
+            allCategories.forEach(category => {
+                const categoryTxs = this.transactions.filter(t => (t.category || 'Other') === category);
+                const total = categoryTxs.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+                const count = categoryTxs.length;
+
+                if (count > 0) {
+                    stats[category] = { total, count, category };
+                }
+            });
+
+            return Object.values(stats).sort((a, b) => b.total - a.total);
+        },
+
+        getTopPeople(limit = 5) {
+            const peopleWithBalance = this.people.map(person => ({
+                ...person,
+                balance: Math.abs(this.getPersonBalance(person.id)),
+                transactions: this.getPersonTransactionCount(person.id)
+            }));
+
+            return peopleWithBalance
+                .sort((a, b) => b.balance - a.balance)
+                .slice(0, limit);
+        },
+
+        // Summary Stats
+        getTotalTransactions() {
+            return this.transactions.length;
+        },
+
+        getThisMonthInFlow() {
+            const now = new Date();
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            return this.transactions
+                .filter(t => t.type === 'receive' && new Date(t.date) >= monthStart)
+                .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+        },
+
+        getThisMonthOutFlow() {
+            const now = new Date();
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            return this.transactions
+                .filter(t => t.type === 'give' && new Date(t.date) >= monthStart)
+                .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
         }
     };
 }
