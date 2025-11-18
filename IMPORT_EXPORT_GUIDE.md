@@ -4,6 +4,20 @@
 
 The Cash Flow App now includes comprehensive data management features accessible from the **Settings** tab in the footer navigation.
 
+## ⚠️ Important: Android Permissions Required
+
+For the APK version, the app needs **Storage permissions** to import/export CSV files:
+- ✅ Permissions are **automatically configured** during APK build
+- ✅ Android will prompt you to **Allow storage access** on first use
+- ✅ **You must allow** this permission for import/export to work
+
+**See [ANDROID_PERMISSIONS_GUIDE.md](./ANDROID_PERMISSIONS_GUIDE.md) for complete details.**
+
+### Quick Permission Check:
+- After installing APK, go to: **Settings → Apps → Cash Record → Permissions**
+- Ensure **Storage** (or "Files and media" on Android 13+) is enabled
+- If denied, import/export features won't work!
+
 ---
 
 ## 🎯 Features

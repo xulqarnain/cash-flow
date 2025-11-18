@@ -50,6 +50,17 @@ jobs:
       - name: Add Capacitor Android platform
         run: npx cap add android
 
+      - name: Copy Android resources and permissions
+        run: |
+          # Copy AndroidManifest.xml with storage permissions
+          cp android-resources/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+
+          # Create xml directory and copy file_paths.xml
+          mkdir -p android/app/src/main/res/xml
+          cp android-resources/file_paths.xml android/app/src/main/res/xml/file_paths.xml
+
+          echo "✅ Android permissions configured for import/export"
+
       - name: Sync Capacitor
         run: npx cap sync android
 
