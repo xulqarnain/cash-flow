@@ -619,9 +619,9 @@
 
                     <!-- Import Data -->
                     <div class="mb-4">
-                        <input type="file" id="importFile" accept=".csv" @change="importFromCSV($event)" class="hidden">
+                        <input type="file" id="importFile" accept=".csv,text/csv,application/csv,text/plain" @change="importFromCSV($event)" class="hidden">
                         <button @click="document.getElementById('importFile').click()"
-                                class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl p-4 shadow-lg shadow-blue-500/30 hover:shadow-xl card-hover btn-press">
+                                class="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-2xl p-4 shadow-glow hover:shadow-xl card-hover btn-press">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center space-x-3">
                                     <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">

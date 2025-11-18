@@ -628,49 +628,125 @@ function cashApp() {
         },
 
         // Export all data (both people and transactions)
-        exportAllData() {
+        async exportAllData() {
             if (this.transactions.length === 0) {
                 alert('No data to export');
                 return;
             }
 
-            let csv = 'Date,Person,Type,Amount,Category,Description\n';
+            try {
+                // Generate CSV content
+                let csv = 'Date,Person,Type,Amount,Category,Description\n';
 
-            this.transactions.forEach(t => {
-                const row = [
-                    t.date,
-                    this.getPersonName(t.person_id),
-                    t.type === 'give' ? 'Given' : 'Received',
-                    t.amount,
-                    t.category || 'Other',
-                    `"${(t.description || '').replace(/"/g, '""')}"`
-                ].join(',');
-                csv += row + '\n';
-            });
+                this.transactions.forEach(t => {
+                    const row = [
+                        t.date,
+                        this.getPersonName(t.person_id),
+                        t.type === 'give' ? 'Given' : 'Received',
+                        t.amount,
+                        t.category || 'Other',
+                        `"${(t.description || '').replace(/"/g, '""')}"`
+                    ].join(',');
+                    csv += row + '\n';
+                });
 
-            // Download file
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `cash-flow-backup-${new Date().toISOString().split('T')[0]}.csv`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
+                const fileName = `cash-flow-backup-${new Date().toISOString().split('T')[0]}.csv`;
 
-            this.showSuccessMessage(`Exported ${this.transactions.length} transactions successfully!`);
+                // Try Capacitor Filesystem API first (for native Android/iOS)
+                if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem) {
+                    try {
+                        const { Filesystem, Directory } = window.Capacitor.Plugins;
+                        const { Share } = window.Capacitor.Plugins;
+
+                        // Write to Documents directory (user accessible)
+                        await Filesystem.writeFile({
+                            path: fileName,
+                            data: csv,
+                            directory: Directory.Documents,
+                            encoding: 'utf8'
+                        });
+
+                        // Try to share the file (opens share dialog with save options)
+                        if (Share) {
+                            const fileUri = await Filesystem.getUri({
+                                path: fileName,
+                                directory: Directory.Documents
+                            });
+
+                            await Share.share({
+                                title: 'Save Cash Flow Backup',
+                                text: `Backup file: ${fileName}`,
+                                url: fileUri.uri,
+                                dialogTitle: 'Save CSV File'
+                            });
+                        }
+
+                        this.showSuccessMessage(`Exported ${this.transactions.length} transactions!`);
+                        return;
+                    } catch (capError) {
+                        console.warn('Capacitor export failed, falling back to web:', capError);
+                    }
+                }
+
+                // Fallback: Standard web download
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+
+                // Try using Share API if available (works on mobile browsers)
+                if (navigator.share && navigator.canShare) {
+                    try {
+                        const file = new File([blob], fileName, { type: 'text/csv' });
+                        if (navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                files: [file],
+                                title: 'Cash Flow Backup',
+                                text: 'Your transaction backup'
+                            });
+                            this.showSuccessMessage(`Exported ${this.transactions.length} transactions!`);
+                            return;
+                        }
+                    } catch (shareError) {
+                        console.warn('Share API failed, using download:', shareError);
+                    }
+                }
+
+                // Final fallback: Direct download link
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+
+                // Cleanup
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 300);
+
+                this.showSuccessMessage(`Exported ${this.transactions.length} transactions!`);
+
+            } catch (error) {
+                console.error('Export error:', error);
+                alert(`Failed to export: ${error.message}\n\nPlease ensure storage permissions are granted.`);
+            }
         },
 
         // Import data from CSV
         async importFromCSV(event) {
             const file = event.target.files[0];
-            if (!file) return;
+            if (!file) {
+                console.log('No file selected');
+                return;
+            }
+
+            console.log('File selected:', file.name, file.type, file.size);
 
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
                     const csv = e.target.result;
+                    console.log('CSV loaded, length:', csv.length);
                     const lines = csv.split('\n');
 
                     // Skip header row
