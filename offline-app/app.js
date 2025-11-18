@@ -1,11 +1,11 @@
 /**
- * Cash Record - Offline Alpine.js App with Capacitor SQLite
+ * Cash Record - Offline Alpine.js App
  * Complete data management and business logic
+ * Uses IndexedDB for reliable offline storage (works in browser and native app)
  */
 
-// Import Capacitor SQLite (will be available after Capacitor setup)
+// Import Capacitor (will be available after Capacitor setup)
 const { Capacitor } = window.Capacitor || {};
-const { CapacitorSQLite, SQLiteConnection } = window.CapacitorSQLite || {};
 
 // Main Alpine.js Component
 function cashApp() {
@@ -32,7 +32,6 @@ function cashApp() {
 
         // Database
         db: null,
-        sqlite: null,
 
         // Initialize
         async init() {
@@ -48,57 +47,16 @@ function cashApp() {
             console.log('App initialized successfully');
         },
 
-        // Database Initialization
+        // Database Initialization - Uses IndexedDB for all platforms
         async initDatabase() {
             try {
-                // Check if running in Capacitor environment
-                if (Capacitor && Capacitor.isNativePlatform()) {
-                    // Use Capacitor SQLite
-                    this.sqlite = new SQLiteConnection(CapacitorSQLite);
-                    this.db = await this.sqlite.createConnection('cashrecord.db', false, 'no-encryption', 1);
-                    await this.db.open();
-
-                    // Create tables
-                    await this.createTables();
-                    console.log('SQLite database initialized');
-                } else {
-                    // Use IndexedDB for web version
-                    await this.initIndexedDB();
-                    console.log('IndexedDB initialized (web fallback)');
-                }
+                await this.initIndexedDB();
+                console.log('IndexedDB initialized successfully');
             } catch (error) {
                 console.error('Database initialization error:', error);
-                // Fallback to memory storage
+                // Fallback to localStorage
                 this.people = JSON.parse(localStorage.getItem('people') || '[]');
                 this.transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
-            }
-        },
-
-        // Create database tables
-        async createTables() {
-            const peopleTable = `
-                CREATE TABLE IF NOT EXISTS people (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
-                );
-            `;
-
-            const transactionsTable = `
-                CREATE TABLE IF NOT EXISTS transactions (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    person_id INTEGER NOT NULL,
-                    type TEXT NOT NULL,
-                    amount REAL NOT NULL,
-                    date TEXT NOT NULL,
-                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (person_id) REFERENCES people(id) ON DELETE CASCADE
-                );
-            `;
-
-            if (this.db) {
-                await this.db.execute(peopleTable);
-                await this.db.execute(transactionsTable);
             }
         },
 
@@ -135,11 +93,7 @@ function cashApp() {
         // CRUD Operations - People
         async loadPeople() {
             try {
-                if (this.sqlite && this.db) {
-                    // SQLite
-                    const result = await this.db.query('SELECT * FROM people ORDER BY created_at DESC');
-                    this.people = result.values || [];
-                } else if (this.db && this.db.objectStoreNames) {
+                if (this.db && this.db.objectStoreNames) {
                     // IndexedDB
                     const tx = this.db.transaction(['people'], 'readonly');
                     const store = tx.objectStore('people');
