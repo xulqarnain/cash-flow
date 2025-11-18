@@ -1,0 +1,74 @@
+════════════════════════════════════════════════════════════
+  CASH RECORD - OFFLINE APP - GETTING STARTED
+════════════════════════════════════════════════════════════
+
+✅ Your offline app is ready! All files are in place.
+
+════════════════════════════════════════════════════════════
+  OPTION 1: Quick Test in Browser (2 minutes)
+════════════════════════════════════════════════════════════
+
+1. Run the test script:
+   ./test-app.sh
+
+2. Open browser to: http://localhost:8080
+
+3. Try it out:
+   - Add a person
+   - Add transactions
+   - View balances
+   - Check history
+   - Close browser and reopen - data persists!
+
+════════════════════════════════════════════════════════════
+  OPTION 2: Build Android APK (30-60 minutes)
+════════════════════════════════════════════════════════════
+
+📖 Read the complete guide:
+   ../BUILD_OFFLINE_APK.md
+
+Quick steps:
+1. Create app icons (optional for testing):
+   ./create-icons.sh
+
+2. Install dependencies (from parent directory):
+   cd ..
+   npm install
+
+3. Add Android platform:
+   npx cap add android
+
+4. Open in Android Studio:
+   npx cap open android
+
+5. In Android Studio:
+   Build → Build APK(s)
+
+6. Install on phone:
+   adb install android/app/build/outputs/apk/debug/app-debug.apk
+
+════════════════════════════════════════════════════════════
+  FILES IN THIS DIRECTORY
+════════════════════════════════════════════════════════════
+
+✓ index.html         - Main app UI (Alpine.js)
+✓ app.js             - Database & business logic
+✓ service-worker.js  - Offline caching
+✓ manifest.json      - PWA configuration
+✓ offline.html       - Offline fallback
+✓ create-icons.sh    - Icon generation helper
+✓ test-app.sh        - Quick browser test script
+✓ README.md          - Technical documentation
+
+⚠ icon-192.png       - Create with ./create-icons.sh
+⚠ icon-512.png       - Create with ./create-icons.sh
+
+════════════════════════════════════════════════════════════
+  NEXT STEPS
+════════════════════════════════════════════════════════════
+
+Start with Option 1 to test in your browser first!
+
+Then move to Option 2 when you're ready to build the APK.
+
+════════════════════════════════════════════════════════════
